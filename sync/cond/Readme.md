@@ -31,3 +31,30 @@
 #### Заключение
 
 Этот пример демонстрирует применение условных переменных и мьютексов в Go для синхронизации работы между горутинами. Эти механизмы являются важными инструментами для разработки безопасных и эффективных многопоточных приложений на языке Go.
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+func main() {
+	var mu sync.Mutex
+	cond := sync.NewCond(&mu)
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		mu.Lock()
+		defer mu.Unlock()
+		cond.Signal() // сигнализируем об изменении состояния
+	}()
+
+	mu.Lock()
+	defer mu.Unlock()
+	cond.Wait() // ждем сигнала об изменении состояния
+	fmt.Println("Received signal")
+}
+```
