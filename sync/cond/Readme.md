@@ -58,3 +58,55 @@ func main() {
 	fmt.Println("Received signal")
 }
 ```
+
+```go
+package main
+
+import (
+   "fmt"
+   "sync"
+   "time"
+)
+
+func main() {
+   var mu sync.Mutex
+   cond := sync.NewCond(&mu)
+
+   // Первая горутина
+   go func() {
+      mu.Lock()
+      fmt.Println("Goroutine 1: Waiting for signal")
+      cond.Wait() // Ждем сигнала
+      fmt.Println("Goroutine 1: Received signal")
+      mu.Unlock()
+   }()
+
+   // Вторая горутина
+   go func() {
+      mu.Lock()
+      fmt.Println("Goroutine 2: Waiting for signal")
+      cond.Wait() // Ждем сигнала
+      fmt.Println("Goroutine 2: Received signal")
+      mu.Unlock()
+   }()
+
+   // Отправляем сигнал после некоторой задержки
+   time.Sleep(2 * time.Second)
+   mu.Lock()
+   fmt.Println("Sending broadcast signal to wake up all goroutines")
+   cond.Broadcast() // Отправляем широковещательный сигнал
+   mu.Unlock()
+
+   // Ждем завершения работы горутин
+   time.Sleep(1 * time.Second)
+   fmt.Println("Main goroutine: Done")
+}
+```
+
+Если одна горутина была разбужена с помощью `Signal()`, 
+остальные горутины, которые ожидают на `sync.Cond`, останутся заблокированными 
+до тех пор, пока не будет отправлен новый сигнал снова через `Signal()` или `Broadcast()`.
+
+Концепция `sync.Cond` в Go предполагает, что каждый вызов `Signal()` разбудит ровно одну 
+горутину из ожидающих. Если вам нужно разбудить несколько или все ожидающие горутины, 
+используйте `Broadcast()`, который разбудит все ожидающие горутины одновременно.
